@@ -23,5 +23,5 @@ if __name__ == "__main__":
     else:
         forwarder = "localhost"
 
-    s = subscriber(forwarderIP = forwarder,topicfilter = "TEST")
+    s = subscriber(forwarderIP = forwarder,topicfilter = "TEST 1")
     s.run()

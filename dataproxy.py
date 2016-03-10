@@ -55,6 +55,7 @@ class publisher:
         self.topic = topic
         self.forwarderIP = forwarderIP
         self.out_port = out_port
+        self.send = ""
         pass
         
     def get_data(self):
@@ -68,30 +69,38 @@ class publisher:
 		
         return dt.datetime.now().isoformat() 
 
-    def run(self):
-        context = zmq.Context()
-        socket = context.socket(zmq.PUB)
-        socket.connect("tcp://%s:%s" % (self.forwarderIP, self.out_port))
-        while True:
-            #socket.send("%s %s" % (self.topic, self.get_data()))
-            # Testing zipped pickle
-            #msg ="%s %s" % (self.topic, self.get_data())
-            self.send_zipped_pickle(socket,self.get_data())
+    def send_string(self,socket,msg):
+        return socket.send_multipart([self.topic,msg],flags=0) 
 
-    def send_zipped_pickle(self, socket, obj, flags=0, protocol=-1):
+    def send_zipped_pickle(self, socket, obj):
         """pickle an object, and zip the pickle before sending it"""
+        flags=0
+        protocol=-1
         p = pickle.dumps(obj, protocol)
         z = zlib.compress(p)
         return socket.send_multipart([self.topic,z],flags=flags)
 
-    def send_array(self,socket, A, flags=0, copy=True, track=False):
+    def send_array(self,socket, A):
         """send a numpy array with metadata"""
+        flags=0
+        copy=True
+        track=False
         md = dict(
             dtype = str(A.dtype),
             shape = A.shape,
         )
         socket.send_json(md, flags|zmq.SNDMORE)
         return socket.send(A, flags, copy=copy, track=track)
+
+    def run(self):
+        context = zmq.Context()
+        socket = context.socket(zmq.PUB)
+        socket.connect("tcp://%s:%s" % (self.forwarderIP, self.out_port))
+        if self.send == "":
+            self.send = self.send_string
+        while True:
+            self.send(socket,self.get_data())
+
 
 
 class subscriber:
@@ -103,6 +112,7 @@ class subscriber:
         self.in_port = in_port
         self.topicfilter = topicfilter
         self.data = ""
+        self.recv = ""
 
     def process_data(self,data):
         '''
@@ -113,15 +123,24 @@ class subscriber:
         print "Received: %s" % self.data
         return
 
-    def recv_zipped_pickle(self,socket, flags=0, protocol=-1):
+    def recv_string(self,socket):
+        [address, data] = socket.recv_multipart()
+        return data 
+
+    def recv_zipped_pickle(self,socket):
         """inverse of send_zipped_pickle"""
+        flags=0
+        protocol = -1
         #z = socket.recv(flags)
         [address, z] = socket.recv_multipart()
         p = zlib.decompress(z)
         return pickle.loads(p)
 
-    def recv_array(self,socket, flags=0, copy=True, track=False):
+    def recv_array(self,socket):
         """recv a numpy array"""
+        flags=0
+        copy=True, 
+        track=False
         md = socket.recv_json(flags=flags)
         msg = socket.recv(flags=flags, copy=copy, track=track)
         buf = buffer(msg)
@@ -137,8 +156,13 @@ class subscriber:
         socket.connect ("tcp://%s:%s" % (self.forwarderIP, self.in_port))	    
         socket.setsockopt(zmq.SUBSCRIBE, self.topicfilter)
 
-        while True:
-            #self.process_data(socket.recv())
+        # Set the transmission mode
+        if self.recv == "":
+            self.recv = self.recv_string
 
-            self.process_data(self.recv_zipped_pickle(socket))
-            #self.process_data(socket.recv_pyobj())
+        while True:
+            # old method
+            #
+            # Extract zipped pickle
+            self.process_data(self.recv(socket))
+

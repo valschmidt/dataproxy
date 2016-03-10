@@ -32,7 +32,7 @@ if __name__ == "__main__":
         forwarder = "localhost"
     print "Sending to forwarder %s:" % forwarder
 
-    p = publisher(topic = "TEST",forwarderIP = forwarder)
+    p = publisher(topic = "TEST 123",forwarderIP = forwarder)
     try:
         p.run()
     except KeyboardInterrupt, e:
