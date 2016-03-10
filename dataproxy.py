@@ -9,7 +9,7 @@ import zmq
 import sys
 import datetime as dt
 import time
-import zlib, CPickle as pickle
+import zlib, cPickle as pickle
 
 # import logging   // Set up logging. 
 
@@ -73,15 +73,18 @@ class publisher:
         socket = context.socket(zmq.PUB)
         socket.connect("tcp://%s:%s" % (self.forwarderIP, self.out_port))
         while True:
-            socket.send("%s %s" % (self.topic, self.get_data()))
+            #socket.send("%s %s" % (self.topic, self.get_data()))
+            # Testing zipped pickle
+            #msg ="%s %s" % (self.topic, self.get_data())
+            self.send_zipped_pickle(socket,self.get_data())
 
-    def send_zipped_pickle(socket, obj, flags=0, protocol=-1):
+    def send_zipped_pickle(self, socket, obj, flags=0, protocol=-1):
         """pickle an object, and zip the pickle before sending it"""
         p = pickle.dumps(obj, protocol)
         z = zlib.compress(p)
-        return socket.send(z, flags=flags)
+        return socket.send_multipart([self.topic,z],flags=flags)
 
-    def send_array(socket, A, flags=0, copy=True, track=False):
+    def send_array(self,socket, A, flags=0, copy=True, track=False):
         """send a numpy array with metadata"""
         md = dict(
             dtype = str(A.dtype),
@@ -110,13 +113,14 @@ class subscriber:
         print "Received: %s" % self.data
         return
 
-    def recv_zipped_pickle(socket, flags=0, protocol=-1):
+    def recv_zipped_pickle(self,socket, flags=0, protocol=-1):
         """inverse of send_zipped_pickle"""
-        z = socket.recv(flags)
+        #z = socket.recv(flags)
+        [address, z] = socket.recv_multipart()
         p = zlib.decompress(z)
         return pickle.loads(p)
 
-    def recv_array(socket, flags=0, copy=True, track=False):
+    def recv_array(self,socket, flags=0, copy=True, track=False):
         """recv a numpy array"""
         md = socket.recv_json(flags=flags)
         msg = socket.recv(flags=flags, copy=copy, track=track)
@@ -134,4 +138,7 @@ class subscriber:
         socket.setsockopt(zmq.SUBSCRIBE, self.topicfilter)
 
         while True:
-            self.process_data(socket.recv())
+            #self.process_data(socket.recv())
+
+            self.process_data(self.recv_zipped_pickle(socket))
+            #self.process_data(socket.recv_pyobj())
