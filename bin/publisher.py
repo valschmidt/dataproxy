@@ -5,11 +5,12 @@
 # Univeristy of New Hampshire
 # Copyright 2016
 
+import _mypath
 import dataproxy
 import time
 import sys
 
-GPSFILE = open("test/HLY0805-posnav.y2008d233",'r')
+GPSFILE = open("../test/HLY0805-posnav.y2008d233",'r')
 
 class publisher(dataproxy.publisher):
 
