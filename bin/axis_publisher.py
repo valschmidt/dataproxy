@@ -8,23 +8,24 @@
 import dataproxy
 import time
 import sys
+import urllib2
 
-#GPSFILE = open("test/HLY0805-posnav.y2008d233",'r')
-GPSFILE = open("test/test.txt",'r')
+axisip = 192.168.8.96
 
 
 class publisher(dataproxy.publisher):
 
     def get_data(self):
         time.sleep(1)
-        line = GPSFILE.readline()
-        # Restart at the beginning if we get to the end.
-        if line == "":
-            GPSFILE.seek(0)
-            line = GPSFILE.readline()
+        url = "http://%s/axis-cgi/jpg/image.cgi" % axisip
+        
+        try:
+            I = urllib2.open(url)
+        except:
+            print "Error getting image at %s", url
 
-        print "Sending: " + line.rstrip()
-        return line
+        print "Sending image..."
+        return I
 
 if __name__ == "__main__":
 
@@ -34,7 +35,7 @@ if __name__ == "__main__":
         forwarder = "localhost"
     print "Sending to forwarder %s:" % forwarder
 
-    p = publisher(topic = "TEST",forwarderIP = forwarder)
+    p = publisher(topic = "TEST 123",forwarderIP = forwarder)
     try:
         p.run()
     except KeyboardInterrupt, e:

@@ -69,6 +69,16 @@ class publisher:
 		
         return dt.datetime.now().isoformat() 
 
+    def get_test_data(self):
+        '''
+        A method to publish ASCII text data, one line at a time at 1Hz from a text file.
+        
+        Not yet implemented
+        '''
+        pass
+        
+        
+
     def send_string(self,socket,msg):
         return socket.send_multipart([self.topic,msg],flags=0) 
 
@@ -78,6 +88,12 @@ class publisher:
         protocol=-1
         p = pickle.dumps(obj, protocol)
         z = zlib.compress(p)
+        return socket.send_multipart([self.topic,z],flags=flags)
+
+    def send_zipped_binary(self,socket,buf):
+        '''Send a zipped binary buffer of data.'''
+        flags=0
+        z = zlib.compress(buf)
         return socket.send_multipart([self.topic,z],flags=flags)
 
     def send_array(self,socket, A):
@@ -96,8 +112,10 @@ class publisher:
         context = zmq.Context()
         socket = context.socket(zmq.PUB)
         socket.connect("tcp://%s:%s" % (self.forwarderIP, self.out_port))
+        self.send = self.send_zipped_binary
         if self.send == "":
             self.send = self.send_string
+            
         while True:
             self.send(socket,self.get_data())
 
@@ -136,6 +154,12 @@ class subscriber:
         p = zlib.decompress(z)
         return pickle.loads(p)
 
+    def recv_zipped_binary(self,socket):
+        flags=0
+        [address,z] = socket.recv_multipart()
+        p = zlib.decompress(z)
+        return p
+
     def recv_array(self,socket):
         """recv a numpy array"""
         flags=0
@@ -156,6 +180,7 @@ class subscriber:
         socket.connect ("tcp://%s:%s" % (self.forwarderIP, self.in_port))	    
         socket.setsockopt(zmq.SUBSCRIBE, self.topicfilter)
 
+        self.recv = self.recv_zipped_binary
         # Set the transmission mode
         if self.recv == "":
             self.recv = self.recv_string

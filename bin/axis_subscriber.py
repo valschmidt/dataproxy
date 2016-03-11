@@ -9,11 +9,15 @@ import dataproxy
 import time
 import datetime as dt
 import sys
+import Image
+from cStringIO import StringIO
+import Tk, ImageTk
 
 class subscriber(dataproxy.subscriber):
 
     def process_data(self,data):
-        print "Received[%s]: %s" % (dt.datetime.now().isoformat(),data.rstrip())
+        im = Image(StringIO(data.read()))
+        im.show()
         return
 
 if __name__ == "__main__":
