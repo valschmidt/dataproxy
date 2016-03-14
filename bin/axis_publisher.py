@@ -24,6 +24,15 @@ parser.add_argument("-a","--axis_camera",
                     action = "store",
                     default = axisip,
                     help = "IP address or DNS name of the axis camera")
+parser.add_argument("-i","--topicID",
+                    action = "store",
+                    default = "CAMERA_01",
+                    help = "Text string for ID of this published topic.")
+parser.add_argument("-d","--delay",
+                    action = "store",
+                    default = 1,
+                    type = float,
+                    help = "Time in seconds to delay before sending the next image.")
 parser.add_argument("-l","--log_locally",
                     action = "store_true",
                     default = False,
@@ -36,7 +45,7 @@ parser.add_argument("-v","--verbosity",
 class publisher(dataproxy.publisher):
 
     def get_data(self):
-        time.sleep(1)
+        time.sleep(delaysecs)
         url = "http://%s/axis-cgi/jpg/image.cgi" % axisip
 
         try:
@@ -54,16 +63,18 @@ if __name__ == "__main__":
     
     forwarder = args.forwarder
     axisip = args.axis_camera
+    topicID = args.topicID
+    delaysecs = args.delay
     verbosity = args.verbosity
     loglocally = args.log_locally
 
-#     if sys.argv.__len__() > 1:
-#         forwarder = sys.argv[1]
-#     else:
-#         forwarder = "localhost"
-    print "Sending to forwarder %s:" % forwarder
+    if verbosity >= 1:
+        print "Arguments:"
+        arguments = vars(args)
+        for key, value in arguments.iteritems():
+            print "\t%s:\t\t%s" % (key,str(value))
 
-    p = publisher(topic = "TEST 123",forwarderIP = forwarder)
+    p = publisher(topic = topicID,forwarderIP = forwarder)
     try:
         p.run()
     except KeyboardInterrupt, e:
