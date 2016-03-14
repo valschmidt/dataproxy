@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser()
 #group = parser.add_mutually_exclusive_group()
 parser.add_argument("-f","--forwarder",
                     action = "store",
-                    default = "marvel.ccom.unh.edu",
+                    default = "localhost",
                     help = "IP address or DNS name of the forwarder")
 parser.add_argument("-t","--topicID",
                     action = "store",

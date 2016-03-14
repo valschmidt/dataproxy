@@ -18,7 +18,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-f","--forwarder", 
                     action = "store",
-                    default = "marvel.ccom.unh.eduu",
+                    default = "localhost",
                     help = "IP address or DNS name of the forwarder")
 parser.add_argument("-a","--axis_camera", 
                     action = "store",
