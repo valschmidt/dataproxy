@@ -5,19 +5,23 @@
 # Univeristy of New Hampshire
 # Copyright 2016
 
+import _mypath
 import dataproxy
 import time
 import datetime as dt
 import sys
-import Image
-from cStringIO import StringIO
-import Tk, ImageTk
+#import Image
+#from cStringIO import StringIO
+#import Tk, ImageTk
 
 class subscriber(dataproxy.subscriber):
 
     def process_data(self,data):
-        im = Image(StringIO(data.read()))
-        im.show()
+        # The axis camera will send jpg images. For now we simply capture them and write them to disk.
+        #im = Image(StringIO(data.read()))
+        fh = open('image_%02d.jpg' % dt.datetime.now().second,'w')
+        fh.write(data)
+        fh.close()
         return
 
 if __name__ == "__main__":
