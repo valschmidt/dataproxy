@@ -192,7 +192,7 @@ class subscriber:
 
         socket.setsockopt(zmq.SUBSCRIBE, self.topicfilter)
 
-        self.recv = self.recv_string
+        #self.recv = self.recv_string
         # Set the transmission mode
         if self.recv == "":
             self.recv = self.recv_string
