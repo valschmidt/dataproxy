@@ -56,6 +56,7 @@ class publisher:
         self.forwarderIP = forwarderIP
         self.out_port = out_port
         self.send = ""
+        self.verbosity = 0
         pass
         
     def get_data(self):
@@ -80,6 +81,8 @@ class publisher:
         
 
     def send_string(self,socket,msg):
+        if self.verbosity >=2:
+            print "Sending %s %s" % (self.topic,msg.rstrip())
         return socket.send_multipart([self.topic,msg],flags=0) 
 
     def send_zipped_pickle(self, socket, obj):
@@ -111,8 +114,11 @@ class publisher:
     def run(self):
         context = zmq.Context()
         socket = context.socket(zmq.PUB)
-        socket.connect("tcp://%s:%s" % (self.forwarderIP, self.out_port))
-        self.send = self.send_zipped_binary
+        url = "tcp://%s:%s" % (self.forwarderIP, self.out_port)
+        if self.verbosity >= 1:
+            print "Connecting to %s" % url
+        socket.connect(url)
+        self.send = ""
         if self.send == "":
             self.send = self.send_string
             
@@ -131,6 +137,7 @@ class subscriber:
         self.topicfilter = topicfilter
         self.data = ""
         self.recv = ""
+        self.verbosity = 0
 
     def process_data(self,data):
         '''
@@ -176,18 +183,20 @@ class subscriber:
 		
         context = zmq.Context()
         socket = context.socket(zmq.SUB)
-        print "Collecting updates from server (%s)..." % self.forwarderIP
-        socket.connect ("tcp://%s:%s" % (self.forwarderIP, self.in_port))	    
+        if self.verbosity >= 1:
+            print "Connecting to server (%s:%s)..." % (self.forwarderIP,self.in_port)
+
+        socket.connect ("tcp://%s:%s" % (self.forwarderIP, self.in_port))
+        if self.verbosity >= 1:
+            print "Subscribing to topic: %s" % self.topicfilter
+
         socket.setsockopt(zmq.SUBSCRIBE, self.topicfilter)
 
-        self.recv = self.recv_zipped_binary
+        self.recv = self.recv_string
         # Set the transmission mode
         if self.recv == "":
             self.recv = self.recv_string
 
         while True:
-            # old method
-            #
-            # Extract zipped pickle
             self.process_data(self.recv(socket))
 
