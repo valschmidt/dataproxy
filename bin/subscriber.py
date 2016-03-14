@@ -57,7 +57,8 @@ class subscriber(dataproxy.subscriber):
         switcher = {
             "s":self.recv_string,
             "p":self.recv_zipped_pickle,
-            "b":self.recv_zipped_binary,
+            "zb":self.recv_zipped_binary,
+            "b":self.recv_binary,
             "n":self.recv_array,
             }
         return switcher.get(argument, "")

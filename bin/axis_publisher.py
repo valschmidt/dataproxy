@@ -54,7 +54,9 @@ class publisher(dataproxy.publisher):
             print "Error getting image at %s" % url
             return ""
 
-        print "Sending image..."
+        if self.verbosity >= 2:            
+            print "Sending image from %s to topic %s..." % (axisip, self.topic)
+
         return I.read()
 
 if __name__ == "__main__":
@@ -75,6 +77,8 @@ if __name__ == "__main__":
             print "\t%s:\t\t%s" % (key,str(value))
 
     p = publisher(topic = topicID,forwarderIP = forwarder)
+    p.verbosity = verbosity
+    p.send = p.send_binary
     try:
         p.run()
     except KeyboardInterrupt, e:

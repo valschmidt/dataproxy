@@ -61,6 +61,22 @@ class publisher(dataproxy.publisher):
         line = serialport.readline()
         return line
 
+    def assign_sender(self,argument):
+        ''' 
+        A utility method to assign the appropriate receive function.
+
+        This works like a switch:case statement in other languages.
+        See: http://www.pydanny.com/why-doesnt-python-have-switch-case.html
+        '''
+        switcher = {
+            "s":self.send_string,
+            "p":self.send_zipped_pickle,
+            "zb":self.send_zipped_binary,
+            "b": self.send_binary,
+            "n":self.send_array,
+            }
+        return switcher.get(argument, "")
+
 if __name__ == "__main__":
 
     # Handle arguments
@@ -82,6 +98,7 @@ if __name__ == "__main__":
     # Create the publisher. 
     p = publisher(topic = topicID ,forwarderIP = forwarder)
     p.verbosity = verbosity
+    p.send = p.assign_sender(transport)
 
     # Override various functions based on the passed arguments.
     if test_file:
