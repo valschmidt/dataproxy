@@ -26,7 +26,7 @@ parser.add_argument("-i","--topicID",
                     help = "Text string for ID of this published topic.")
 group.add_argument("-t","--test_file",
                     action = "store",
-                    default = "../test/HLY0805-posnav.y2008d233",
+                    default = "",
                     help = "File of test messages (1 per line)")
 group.add_argument("-p","--port",
                     action = "store",
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     verbosity = args.verbosity
     transport = args.transport
     loglocally = args.log_locally
-    [serialport, baud] = args.port.split(':')
+    [port, baud] = args.port.split(':')
 
     if verbosity >= 1:
         print "Arguments:"
@@ -90,10 +90,14 @@ if __name__ == "__main__":
             TESTFILE = open(test_file,'r')
         except:
             sys.exit("Error openning test file %s" % test_file)
-    elif serialport:
+    elif port:
         p.get_data = p.get_serial_data
         # open and configure serial port here.
-        
+        serialport = ser.Serial(port = port, baudrate = baud)
+	try:
+	    serialport.open()
+	except:
+	    print "Failed to open serial port (%s)" % port	        
         
 
         
