@@ -124,5 +124,8 @@ if __name__ == "__main__":
     except KeyboardInterrupt, e:
         print e
         print "Cleaning up"
-        TESTFILE.close()
+        if test_file:
+            TESTFILE.close()
+        elif port:
+            p.close()
         
