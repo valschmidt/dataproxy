@@ -99,7 +99,17 @@ class publisher:
         '''Send a zipped binary buffer of data.'''
         flags=0
         z = zlib.compress(buf)
+        if self.verbosity >=2:
+            print "Sending %d bytes..." % z.__len__()
         return socket.send_multipart([self.topic,z],flags=flags)
+
+    def send_binary(self,socket,buf):
+        '''Send a zipped binary buffer of data.'''
+        flags=0
+        if self.verbosity >= 2:
+            print "Sending %d bytes..." % buf.__len__()
+        return socket.send_multipart([self.topic,buf],flags=flags)
+
 
     def send_array(self,socket, A):
         """send a numpy array with metadata"""
@@ -120,7 +130,7 @@ class publisher:
         if self.verbosity >= 1:
             print "Connecting to %s" % url
         socket.connect(url)
-        self.send = ""
+        #self.send = ""
         if self.send == "":
             self.send = self.send_string
             
@@ -168,6 +178,11 @@ class subscriber:
         [address,z] = socket.recv_multipart()
         p = zlib.decompress(z)
         return p
+
+    def recv_binary(self,socket):
+        flags=0
+        [address,z] = socket.recv_multipart()
+        return z
 
     def recv_array(self,socket):
         """recv a numpy array"""
