@@ -5,6 +5,7 @@
 # Univeristy of New Hampshire
 # Copyright 2016
 
+import _mypath
 import dataproxy
 
 d = dataproxy.forwarder()
