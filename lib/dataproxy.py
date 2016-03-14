@@ -37,7 +37,9 @@ class forwarder:
             backend = context.socket(zmq.PUB)
             backend.bind("tcp://*:%s" % self.out_port)
 
-            zmq.device(zmq.FORWARDER, frontend, backend)
+
+            zmq.proxy(frontend, backend)
+
         except (KeyboardInterrupt,Exception) as e:
             print e
             print "bringing down zmq device"
@@ -55,7 +57,7 @@ class publisher:
         self.topic = topic
         self.forwarderIP = forwarderIP
         self.out_port = out_port
-        self.send = ""
+        self.send = ""                 # method of sending data.
         self.verbosity = 0
         pass
         
