@@ -10,6 +10,8 @@ import sys
 import datetime as dt
 import time
 import zlib, cPickle as pickle
+import logging, logging.handlers as fh
+import os
 
 # import logging   // Set up logging. 
 
@@ -44,10 +46,10 @@ class forwarder:
             print e
             print "bringing down zmq device"
         finally:
-            pass
             frontend.close()
             backend.close()
             context.term()
+            
 
 class publisher:
     '''
@@ -59,6 +61,10 @@ class publisher:
         self.out_port = out_port
         self.send = ""                 # method of sending data.
         self.verbosity = 0
+        self.loglocally = False
+        self.logdir = '.'
+        self.logger = None
+        
         pass
         
     def get_data(self):
@@ -122,6 +128,36 @@ class publisher:
         )
         socket.send_json(md, flags|zmq.SNDMORE)
         return socket.send(A, flags, copy=copy, track=track)
+        
+    def init_logging(self, logdir = '.'):
+            
+        self.logger = logging.getLogger('log')
+        self.logger.setLevel(logging.INFO)
+        if self.logdir == '.':
+            self.logdir = logdir
+
+        formatter = logging.Formatter('%(asctime)s,%(message)s')
+
+        #handler = fh.TimedCompressedRotatingFileHandler('/Users/vschmidt/scratch/test.txt',
+        #                              when='s',interval=20, utc=True)
+        if not os.path.exists(self.logdir):
+            print "No such path for file logging: %s" % logdir
+            sys.exit
+            
+        logpath = os.path.join(self.logdir,self.topic + '.txt')
+        if self.verbosity >=1:
+            print "Setting up logging to %s" % logpath
+        
+        handler = fh.TimedRotatingFileHandler(logpath,
+                                              when='midnight',interval=1, utc=True)
+        handler.setFormatter(formatter)
+        handler.setLevel(logging.INFO)
+        
+        self.logger.addHandler(handler)
+        
+    def log(self,data):
+        self.logger.info(data.rstrip())
+        
 
     def run(self):
         context = zmq.Context()
@@ -133,9 +169,15 @@ class publisher:
         #self.send = ""
         if self.send == "":
             self.send = self.send_string
+
+        if self.loglocally:
+            self.init_logging()
             
         while True:
-            self.send(socket,self.get_data())
+            data = self.get_data()
+            if self.loglocally and self.recv == self.send_string:
+                self.log(data)
+            self.send(socket,data)
 
 
 
@@ -150,6 +192,9 @@ class subscriber:
         self.data = ""
         self.recv = ""
         self.verbosity = 0
+        self.loglocally = False
+        self.logdir = '.'
+        self.logger = None
 
     def process_data(self,data):
         '''
@@ -195,6 +240,34 @@ class subscriber:
         A = numpy.frombuffer(buf, dtype=md['dtype'])
         return A.reshape(md['shape'])
 
+    def init_logging(self, logdir = '.'):
+            
+        self.logger = logging.getLogger('log')
+        self.logger.setLevel(logging.INFO)
+        if self.logdir == '.':
+            self.logdir = logdir
+
+        formatter = logging.Formatter('%(asctime)s,%(message)s')
+
+        #handler = fh.TimedCompressedRotatingFileHandler('/Users/vschmidt/scratch/test.txt',
+        #                              when='s',interval=20, utc=True)
+        if not os.path.exists(self.logdir):
+            print "No such path for file logging: %s" % logdir
+            sys.exit
+            
+        logpath = os.path.join(self.logdir,self.topicfilter + '.txt')
+        if self.verbosity >=1:
+            print "Setting up logging to %s" % logpath
+        
+        handler = fh.TimedRotatingFileHandler(logpath,
+                                              when='midnight',interval=1, utc=True)
+        handler.setFormatter(formatter)
+        handler.setLevel(logging.INFO)
+        
+        self.logger.addHandler(handler)
+        
+    def log(self,data):
+        self.logger.info(data.rstrip())
 		
     def run(self):
 		
@@ -208,6 +281,9 @@ class subscriber:
             print "Subscribing to topic: %s" % self.topicfilter
 
         socket.setsockopt(zmq.SUBSCRIBE, self.topicfilter)
+        
+        if self.loglocally:
+            self.init_logging()
 
         #self.recv = self.recv_string
         # Set the transmission mode
@@ -215,5 +291,8 @@ class subscriber:
             self.recv = self.recv_string
 
         while True:
-            self.process_data(self.recv(socket))
+            data = self.recv(socket)
+            if self.loglocally and self.recv == self.recv_string:
+                self.log(data)
+            self.process_data(data)
 
