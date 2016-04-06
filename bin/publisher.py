@@ -10,7 +10,7 @@ import dataproxy
 import time
 import sys
 import serial as ser
-
+import TimedCompressedRotatingFileHandler as fh
 
 # Set up argument parsing.                                                                                         
 import argparse
@@ -36,7 +36,11 @@ group.add_argument("-p","--port",
 parser.add_argument("-l","--log_locally",
                     action = "store_true",
                     default = False,
-                    help = "Log images locally [NOT IMPLEMENTED]")
+                    help = "Log data locally (strings only)")
+parser.add_argument("-d","--log_directory",
+                    action = "store",
+                    default = '.',
+                    help = "Log data directory")
 parser.add_argument("-v","--verbosity",
                     action = "count",
                     help = "Verbose output to terminal")
@@ -87,6 +91,7 @@ if __name__ == "__main__":
     verbosity = args.verbosity
     transport = args.transport
     loglocally = args.log_locally
+    logdir = args.log_directory
     [port, baud] = args.port.split(':')
 
     if verbosity >= 1:
@@ -99,6 +104,8 @@ if __name__ == "__main__":
     p = publisher(topic = topicID ,forwarderIP = forwarder)
     p.verbosity = verbosity
     p.send = p.assign_sender(transport)
+    p.loglocally = loglocally
+    p.logdir = logdir
 
     # Override various functions based on the passed arguments.
     if test_file:
