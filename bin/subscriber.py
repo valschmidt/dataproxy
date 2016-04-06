@@ -11,6 +11,7 @@ import time
 import datetime as dt
 import sys
 
+
 # Set up argument parsing
 import argparse
 parser = argparse.ArgumentParser()
@@ -19,11 +20,11 @@ parser.add_argument("-f","--forwarder",
                     action = "store",
                     default = "localhost",
                     help = "IP address or DNS name of the forwarder")
-parser.add_argument("-t","--topicID",
+parser.add_argument("-i","--topicID",
                     action = "store",
                     default = "",
                     help = "Optional text subscription topic. Default subscribes to everything.")
-parser.add_argument("-d","--datatype",
+parser.add_argument("-t","--datatype",
                    action = "store",
                    default = "s",
                    choices = ["s","i","b"],
@@ -36,7 +37,11 @@ parser.add_argument("-T","--transport",
 parser.add_argument("-l","--log_locally",
                     action = "store_true",
                     default = False,
-                    help = "Log images locally [NOT IMPLEMENTED]")
+                    help = "Log data locally (strings only)")
+parser.add_argument("-d","--log_directory",
+                    action = "store",
+                    default = '.',
+                    help = "Log data directory ('.')")
 parser.add_argument("-v","--verbosity",
                     action = "count",
                     help = "Verbose output to terminal")
@@ -44,7 +49,7 @@ parser.add_argument("-v","--verbosity",
 class subscriber(dataproxy.subscriber):
 
     def process_data(self,data):
-        print "Received[%s]: %s" % (dt.datetime.now().isoformat(),data.rstrip())
+        print "Received[%s]: %s" % (dt.datetime.utcnow().isoformat(),data.rstrip())
         return
 
     def assign_receiver(self,argument):
@@ -72,6 +77,7 @@ if __name__ == "__main__":
     verbosity = args.verbosity
     transport = args.transport
     loglocally = args.log_locally
+    logdir = args.log_directory
 
     # Print the arguments
     if verbosity >= 1:
@@ -86,6 +92,9 @@ if __name__ == "__main__":
 
     # Set up the subscriber
     s.recv = s.assign_receiver(transport)
+
+    s.loglocally = loglocally
+    s.logdir = logdir    
     
     # Run it.
     try:
