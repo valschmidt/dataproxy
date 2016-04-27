@@ -64,6 +64,7 @@ class publisher:
         self.loglocally = False
         self.logdir = '.'
         self.logger = None
+        self.logfile = None
         
         pass
         
@@ -130,32 +131,41 @@ class publisher:
         return socket.send(A, flags, copy=copy, track=track)
         
     def init_logging(self, logdir = '.'):
-            
+        ''' A method to set up basic logging for string data.'''
+        
+        # Create the logger
         self.logger = logging.getLogger('log')
         self.logger.setLevel(logging.INFO)
         if self.logdir == '.':
             self.logdir = logdir
 
+        # specify the formatting
         formatter = logging.Formatter('%(asctime)s,%(message)s')
+        formatter.converter = time.gmtime  # ensures logging in GMT
 
         #handler = fh.TimedCompressedRotatingFileHandler('/Users/vschmidt/scratch/test.txt',
         #                              when='s',interval=20, utc=True)
+
+        # Assemble the path and log filename        
         if not os.path.exists(self.logdir):
             print "No such path for file logging: %s" % logdir
             sys.exit
             
-        logpath = os.path.join(self.logdir,self.topic + '.txt')
+        self.logfile = os.path.join(self.logdir,self.topic + '.txt')
         if self.verbosity >=1:
-            print "Setting up logging to %s" % logpath
+            print "Setting up logging to %s" % self.logfile
         
-        handler = fh.TimedRotatingFileHandler(logpath,
-                                              when='midnight',interval=1, utc=True)
+        # Create and configure the handler
+        handler = fh.TimedRotatingFileHandler(self.logfile,
+                                              when='midnight',
+                                              interval=1, 
+                                              utc=True)
         handler.setFormatter(formatter)
-        handler.setLevel(logging.INFO)
-        
+        handler.setLevel(logging.INFO) 
         self.logger.addHandler(handler)
         
     def log(self,data):
+        ''' A function to log data (at the info level by default)'''
         self.logger.info(data.rstrip())
         
 
@@ -175,7 +185,7 @@ class publisher:
             
         while True:
             data = self.get_data()
-            if self.loglocally and self.recv == self.send_string:
+            if self.loglocally and self.send == self.send_string:
                 self.log(data)
             self.send(socket,data)
 
@@ -195,7 +205,8 @@ class subscriber:
         self.loglocally = False
         self.logdir = '.'
         self.logger = None
-
+        self.logfile = None
+        
     def process_data(self,data):
         '''
         A method to process incoming data.
@@ -241,16 +252,24 @@ class subscriber:
         return A.reshape(md['shape'])
 
     def init_logging(self, logdir = '.'):
-            
+        ''' Configure a standard logger for text data.'''
+
+        # Create the logger            
         self.logger = logging.getLogger('log')
         self.logger.setLevel(logging.INFO)
-        if self.logdir == '.':
-            self.logdir = logdir
+        
+        self.logfile = os.path.join(self.logdir,self.topicfilter + '.txt')
+        if self.verbosity >=1:
+            print "Setting up logging to %s" % self.logfile
 
+        # specify the formatting
         formatter = logging.Formatter('%(asctime)s,%(message)s')
+        formatter.converter = time.gmtime  # ensures logging in GMT
 
         #handler = fh.TimedCompressedRotatingFileHandler('/Users/vschmidt/scratch/test.txt',
         #                              when='s',interval=20, utc=True)
+        
+        # Assemble the path and log file        
         if not os.path.exists(self.logdir):
             print "No such path for file logging: %s" % logdir
             sys.exit
@@ -259,14 +278,17 @@ class subscriber:
         if self.verbosity >=1:
             print "Setting up logging to %s" % logpath
         
+        # Create and add the handler
         handler = fh.TimedRotatingFileHandler(logpath,
-                                              when='midnight',interval=1, utc=True)
+                                              when='midnight',
+                                              interval=1, 
+                                              utc=True)
         handler.setFormatter(formatter)
-        handler.setLevel(logging.INFO)
-        
+        handler.setLevel(logging.INFO)        
         self.logger.addHandler(handler)
         
     def log(self,data):
+        ''' A method to log data.'''
         self.logger.info(data.rstrip())
 		
     def run(self):
@@ -285,7 +307,6 @@ class subscriber:
         if self.loglocally:
             self.init_logging()
 
-        #self.recv = self.recv_string
         # Set the transmission mode
         if self.recv == "":
             self.recv = self.recv_string
